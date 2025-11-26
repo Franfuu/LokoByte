@@ -8,6 +8,7 @@ class Product
     public string $description;
     public string $version;
     public float $price;
+    public int $type_id;
     public string $created_at;
 
     /**
@@ -34,17 +35,18 @@ class Product
     /**
      * Crea un nuevo producto.
      */
-    public static function create(PDO $pdo, string $name, string $description, string $version, float $price): void
+    public static function create(PDO $pdo, string $name, string $description, string $version, float $price, int $type_id): void
     {
         $stmt = $pdo->prepare('
-            INSERT INTO products (name, description, version, price, created_at)
-            VALUES (:name, :description, :version, :price, :created_at)
+            INSERT INTO products (name, description, version, price, type_id, created_at)
+            VALUES (:name, :description, :version, :price, :type_id, :created_at)
         ');
         $stmt->execute([
             ':name' => $name,
             ':description' => $description,
             ':version' => $version,
             ':price' => $price,
+            ':type_id' => $type_id,
             ':created_at' => date('Y-m-d H:i:s'),
         ]);
     }
@@ -52,11 +54,11 @@ class Product
     /**
      * Actualiza un producto existente.
      */
-    public static function update(PDO $pdo, int $id, string $name, string $description, string $version, float $price): void
+    public static function update(PDO $pdo, int $id, string $name, string $description, string $version, float $price, int $type_id): void
     {
         $stmt = $pdo->prepare('
             UPDATE products
-            SET name = :name, description = :description, version = :version, price = :price
+            SET name = :name, description = :description, version = :version, price = :price, type_id = :type_id
             WHERE id = :id
         ');
         $stmt->execute([
@@ -64,6 +66,7 @@ class Product
             ':description' => $description,
             ':version' => $version,
             ':price' => $price,
+            ':type_id' => $type_id,
             ':id' => $id,
         ]);
     }
