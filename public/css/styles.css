@@ -367,3 +367,186 @@ footer a:hover {
     opacity: 0.7;
     text-decoration: underline;
 }
+
+/* ========== CABECERA DE PRODUCTOS ========== */
+.product-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.product-info {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+}
+
+/* ========== PAGINACIÓN ========== */
+.pagination {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 0.5rem;
+    margin-top: 2rem;
+    padding: 1.5rem 0;
+    flex-wrap: wrap;
+}
+
+.page-link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 40px;
+    height: 40px;
+    padding: 0.5rem 0.75rem;
+    background-color: var(--bg-secondary);
+    color: var(--text-color);
+    border: 1px solid var(--table-border);
+    border-radius: 4px;
+    text-decoration: none;
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+.page-link:hover {
+    background-color: var(--button-bg);
+    color: var(--button-text);
+    border-color: var(--button-bg);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(220, 20, 60, 0.3);
+}
+
+.page-link.active {
+    background-color: var(--button-bg);
+    color: var(--button-text);
+    border-color: var(--button-bg);
+    font-weight: bold;
+    cursor: default;
+    box-shadow: 0 2px 4px rgba(220, 20, 60, 0.2);
+}
+
+.page-link.active:hover {
+    transform: none;
+}
+
+.page-dots {
+    display: inline-flex;
+    align-items: center;
+    padding: 0 0.5rem;
+    color: var(--text-secondary);
+    font-weight: bold;
+}
+
+/* ========== PANEL DE ESTADÍSTICAS ========== */
+.stats-panel {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.stat-card {
+    background-color: var(--bg-secondary);
+    padding: 1.5rem;
+    border-radius: 8px;
+    border-left: 4px solid var(--button-bg);
+    box-shadow: 0 2px 8px rgba(220, 20, 60, 0.15);
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.stat-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 4px 12px rgba(220, 20, 60, 0.25);
+}
+
+.stat-icon {
+    font-size: 2rem;
+    margin-bottom: 0.5rem;
+}
+
+.stat-card h3 {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    margin-bottom: 0.5rem;
+    font-weight: 600;
+}
+
+.stat-value {
+    font-size: 2rem;
+    font-weight: bold;
+    color: var(--button-bg);
+    margin: 0.5rem 0;
+    line-height: 1.2;
+}
+
+.stat-card small {
+    color: var(--text-secondary);
+    font-size: 0.85rem;
+}
+
+/* ========== PANEL DE DESTACADOS ========== */
+.destacados-panel {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.destacado-card {
+    background-color: var(--bg-secondary);
+    padding: 1.5rem;
+    border-radius: 8px;
+    border: 1px solid var(--table-border);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.destacado-card h4 {
+    color: var(--text-color);
+    margin-bottom: 1rem;
+    font-size: 1.1rem;
+    border-bottom: 2px solid var(--button-bg);
+    padding-bottom: 0.5rem;
+}
+
+.precio-destacado {
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: var(--button-bg);
+    margin-top: 0.5rem;
+}
+
+.tipo-list {
+    list-style: none;
+    padding: 0;
+}
+
+.tipo-list li {
+    padding: 0.5rem 0;
+    border-bottom: 1px solid var(--table-border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.tipo-list li:last-child {
+    border-bottom: none;
+}
+
+.tipo-nombre {
+    font-weight: 500;
+    color: var(--text-color);
+}
+
+.tipo-cantidad {
+    font-weight: bold;
+    color: var(--button-bg);
+    margin-left: auto;
+    margin-right: 0.5rem;
+}
+
+.tipo-porcentaje {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+}

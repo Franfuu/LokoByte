@@ -1,133 +1,213 @@
 <?php
+// filepath: c:\xampp\htdocs\ProyectoTienda\Controllers\ProductController.php
 declare(strict_types=1);
 
 class ProductController
 {
     private PDO $pdo;
+    private const IVA = 0.21; // 21% de IVA
 
     public function __construct(PDO $pdo)
     {
         $this->pdo = $pdo;
     }
 
-    private function requireLogin(): void
-    {
-        ensureSession();
-        if (!isset($_SESSION['user_id'])) {
-            header('Location: index.php?c=auth&a=login');
-            exit;
-        }
-    }
-
     public function index(): void
     {
-        $this->requireLogin();
-        $products = Product::all($this->pdo);
+        ensureSession();
+        
+        // Configuración de paginación
+        $productosPorPagina = 5;
+        $paginaActual = isset($_GET['page']) ? max(1, (int)$_GET['page']) : 1;
+        $offset = ($paginaActual - 1) * $productosPorPagina;
+        
+        // Obtener productos con límite y offset (para mostrar)
+        $stmt = $this->pdo->prepare('
+            SELECT * FROM products 
+            ORDER BY id DESC 
+            LIMIT :limit OFFSET :offset
+        ');
+        $stmt->bindValue(':limit', $productosPorPagina, PDO::PARAM_INT);
+        $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
+        $stmt->execute();
+        $products = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        
+        // Contar total de productos para calcular páginas
+        $totalProductos = (int)$this->pdo->query('SELECT COUNT(*) FROM products')->fetchColumn();
+        $totalPaginas = (int)ceil($totalProductos / $productosPorPagina);
+        
         require __DIR__ . '/../Views/Product/index.php';
     }
 
     public function create(): void
     {
-        $this->requireLogin();
-        $product = ['id' => null, 'name' => '', 'price' => '', 'description' => '', 'version' => '', 'type_id' => ''];
-        $action = 'store';
+        ensureSession();
         require __DIR__ . '/../Views/Product/form.php';
     }
 
     public function store(): void
     {
-        $this->requireLogin();
-
-        $name = trim($_POST['name'] ?? '');
-        $priceStr = trim($_POST['price'] ?? '');
-        $description = trim($_POST['description'] ?? '');   
-        $version = trim($_POST['version'] ?? '');
-        $type_id = isset($_POST['type_id']) ? (int)$_POST['type_id'] : 0;
-
-        if ($name === '' || $priceStr === '' || $description === '' || $version === '' || $type_id === 0) {
-            $error = 'Todos los campos son obligatorios.';
-            $product = [
-                'id' => null, 
-                'name' => $name, 
-                'price' => $priceStr, 
-                'description' => $description, 
-                'version' => $version,
-                'type_id' => $type_id
-            ];
-            $action = 'store';
-            require __DIR__ . '/../Views/Product/form.php';
-            return;
+        ensureSession();
+        
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            header('Location: index.php?c=product&a=index');
+            exit;
         }
-
-        $price = (float)$priceStr;
-
-        Product::create($this->pdo, $name, $description, $version, $price, $type_id);
-
+        
+        $name = trim($_POST['name'] ?? '');
+        $description = trim($_POST['description'] ?? '');
+        $version = trim($_POST['version'] ?? '');
+        $price = (float)($_POST['price'] ?? 0);
+        $stock = (int)($_POST['stock'] ?? 0);
+        $typeId = (int)($_POST['type_id'] ?? 0);
+        
+        $errors = [];
+        
+        if (empty($name)) {
+            $errors[] = 'El nombre es obligatorio.';
+        }
+        if ($price <= 0) {
+            $errors[] = 'El precio debe ser mayor que 0.';
+        }
+        if ($stock < 0) {
+            $errors[] = 'El stock no puede ser negativo.';
+        }
+        if ($typeId <= 0) {
+            $errors[] = 'Debe seleccionar un tipo de producto.';
+        }
+        
+        if (!empty($errors)) {
+            $_SESSION['errors'] = $errors;
+            $_SESSION['old_input'] = $_POST;
+            header('Location: index.php?c=product&a=create');
+            exit;
+        }
+        
+        $productModel = new Product($this->pdo);
+        
+        if ($productModel->create($name, $description, $version, $price, $stock, $typeId)) {
+            $_SESSION['success'] = 'Producto creado correctamente.';
+        } else {
+            $_SESSION['errors'] = ['Error al crear el producto.'];
+        }
+        
         header('Location: index.php?c=product&a=index');
         exit;
     }
 
     public function edit(): void
     {
-        $this->requireLogin();
-
-        $id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
-        $product = Product::find($this->pdo, $id);
-
-        if (!$product) {
-            http_response_code(404);
-            echo 'Producto no encontrado';
-            return;
+        ensureSession();
+        
+        $id = (int)($_GET['id'] ?? 0);
+        if ($id <= 0) {
+            header('Location: index.php?c=product&a=index');
+            exit;
         }
-
-        $action = 'update';
+        
+        $productModel = new Product($this->pdo);
+        $product = $productModel->getById($id);
+        
+        if (!$product) {
+            header('Location: index.php?c=product&a=index');
+            exit;
+        }
+        
         require __DIR__ . '/../Views/Product/form.php';
     }
 
     public function update(): void
     {
-        $this->requireLogin();
-
-        $id = isset($_POST['id']) ? (int)$_POST['id'] : 0;
+        ensureSession();
+        
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            header('Location: index.php?c=product&a=index');
+            exit;
+        }
+        
+        $id = (int)($_POST['id'] ?? 0);
         $name = trim($_POST['name'] ?? '');
-        $priceStr = trim($_POST['price'] ?? '');
         $description = trim($_POST['description'] ?? '');
         $version = trim($_POST['version'] ?? '');
-        $type_id = isset($_POST['type_id']) ? (int)$_POST['type_id'] : 0;
-
-        if ($name === '' || $priceStr === '' || $description === '' || $version === '' || $type_id === 0) {
-            $error = 'Todos los campos son obligatorios.';
-            $product = [
-                'id' => $id, 
-                'name' => $name, 
-                'price' => $priceStr,
-                'description' => $description,
-                'version' => $version,
-                'type_id' => $type_id
-            ];
-            $action = 'update';
-            require __DIR__ . '/../Views/Product/form.php';
-            return;
+        $price = (float)($_POST['price'] ?? 0);
+        $stock = (int)($_POST['stock'] ?? 0);
+        $typeId = (int)($_POST['type_id'] ?? 0);
+        
+        $errors = [];
+        
+        if ($id <= 0) {
+            $errors[] = 'ID de producto inválido.';
         }
-
-        $price = (float)$priceStr;
-
-        Product::update($this->pdo, $id, $name, $description, $version, $price, $type_id);
-
+        if (empty($name)) {
+            $errors[] = 'El nombre es obligatorio.';
+        }
+        if ($price <= 0) {
+            $errors[] = 'El precio debe ser mayor que 0.';
+        }
+        if ($stock < 0) {
+            $errors[] = 'El stock no puede ser negativo.';
+        }
+        if ($typeId <= 0) {
+            $errors[] = 'Debe seleccionar un tipo de producto.';
+        }
+        
+        if (!empty($errors)) {
+            $_SESSION['errors'] = $errors;
+            header("Location: index.php?c=product&a=edit&id=$id");
+            exit;
+        }
+        
+        $productModel = new Product($this->pdo);
+        
+        if ($productModel->update($id, $name, $description, $version, $price, $stock, $typeId)) {
+            $_SESSION['success'] = 'Producto actualizado correctamente.';
+        } else {
+            $_SESSION['errors'] = ['Error al actualizar el producto.'];
+        }
+        
         header('Location: index.php?c=product&a=index');
         exit;
     }
 
     public function delete(): void
     {
-        $this->requireLogin();
-
-        $id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
-        if ($id > 0) {
-            Product::delete($this->pdo, $id);
+        ensureSession();
+        
+        $id = (int)($_GET['id'] ?? 0);
+        if ($id <= 0) {
+            header('Location: index.php?c=product&a=index');
+            exit;
         }
-
+        
+        $productModel = new Product($this->pdo);
+        
+        if ($productModel->delete($id)) {
+            $_SESSION['success'] = 'Producto eliminado correctamente.';
+        } else {
+            $_SESSION['errors'] = ['Error al eliminar el producto.'];
+        }
+        
         header('Location: index.php?c=product&a=index');
         exit;
+    }
+
+    /**
+     * Calcula el precio con IVA
+     * @param float $precio Precio sin IVA
+     * @return float Precio con IVA incluido
+     */
+    private function calcularPrecioConIVA(float $precio): float
+    {
+        return round($precio * (1 + self::IVA), 2);
+    }
+
+    /**
+     * Formatea un precio para mostrar
+     * @param float $precio
+     * @return string
+     */
+    private function formatearPrecio(float $precio): string
+    {
+        return number_format($precio, 2, ',', '.') . ' €';
     }
 }

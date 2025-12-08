@@ -28,7 +28,7 @@ $theme = $_SESSION['theme'] ?? $_COOKIE['theme'] ?? 'light';
             </a>
             <a href="index.php?c=auth&a=logout">Cerrar sesión</a>
         <?php else: ?>
-            <a href="index.php?c=auth&a=login">Login</a>
+            <a href="index.php?c=auth&a=login">Iniciar Sesión</a>
             <a href="index.php?c=auth&a=register">Registrarse</a>
         <?php endif; ?>
     </div>
