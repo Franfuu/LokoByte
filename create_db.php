@@ -37,6 +37,7 @@ $pdo->exec("
         description TEXT,
         version TEXT,
         price REAL NOT NULL,
+        stock INTEGER NOT NULL,
         type_id INTEGER,
         created_at TEXT NOT NULL,
         

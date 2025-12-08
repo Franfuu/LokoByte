@@ -1,58 +1,91 @@
-<?php require __DIR__ . '/../layout/header.php'; ?>
+<?php
+// filepath: c:\xampp\htdocs\ProyectoTienda\Views\Product\form.php
+require __DIR__ . '/../layout/header.php';
 
-<h1><?= $action === 'store' ? 'Nuevo producto' : 'Editar producto' ?></h1>
+$errors = $_SESSION['errors'] ?? [];
+$oldInput = $_SESSION['old_input'] ?? [];
+unset($_SESSION['errors'], $_SESSION['old_input']);
 
-<?php if (!empty($error)): ?>
+$pdo = getPdo();
+$stmt = $pdo->query('SELECT * FROM product_types ORDER BY name');
+$types = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+// Determinar si es edición o creación
+$isEdit = isset($product);
+$title = $isEdit ? 'Editar Producto' : 'Crear Producto';
+$action = $isEdit ? 'update' : 'store';
+$buttonText = $isEdit ? 'Actualizar Producto' : 'Crear Producto';
+?>
+
+<h1><?= $title ?></h1>
+
+<?php if (!empty($errors)): ?>
     <div class="alert alert-error">
-        <?= htmlspecialchars($error) ?>
+        <ul>
+            <?php foreach ($errors as $error): ?>
+                <li><?= htmlspecialchars($error) ?></li>
+            <?php endforeach; ?>
+        </ul>
     </div>
 <?php endif; ?>
 
-<form method="post" action="index.php?c=product&a=<?= htmlspecialchars($action) ?>" class="form">
-    <?php if (!empty($product['id'])): ?>
+<form method="post" action="index.php?c=product&a=<?= $action ?>" class="form">
+    <?php if ($isEdit): ?>
         <input type="hidden" name="id" value="<?= htmlspecialchars((string)$product['id']) ?>">
     <?php endif; ?>
 
     <label>
-        Nombre
-        <input type="text" name="name" value="<?= htmlspecialchars($product['name'] ?? '') ?>" required>
-    </label>
-
-    <label>
-        Precio (€)
-        <input type="number" step="0.01" min="0" name="price" value="<?= htmlspecialchars((string)($product['price'] ?? '0')) ?>" required>
-    </label>
-
-    <label>
-        Descripción
-        <textarea name="description" required><?= htmlspecialchars($product['description'] ?? '') ?></textarea>
+        Nombre del producto
+        <input type="text" name="name" 
+               value="<?= htmlspecialchars($isEdit ? $product['name'] : ($oldInput['name'] ?? '')) ?>" 
+               required>
     </label>
 
     <label>
         Versión
-        <input type="text" name="version" value="<?= htmlspecialchars($product['version'] ?? '') ?>" required>
+        <input type="text" name="version" 
+               value="<?= htmlspecialchars($isEdit ? $product['version'] : ($oldInput['version'] ?? '')) ?>" 
+               required>
     </label>
 
     <label>
-        Tipo de Producto
+        Precio (€)
+        <input type="number" step="0.01" name="price" 
+               value="<?= htmlspecialchars($isEdit ? (string)$product['price'] : ($oldInput['price'] ?? '')) ?>" 
+               required min="0">
+    </label>
+
+    <label>
+        Stock (unidades)
+        <input type="number" name="stock" 
+               value="<?= htmlspecialchars($isEdit ? (string)($product['stock'] ?? 0) : ($oldInput['stock'] ?? '0')) ?>" 
+               required min="0">
+        <small>Cantidad disponible en inventario</small>
+    </label>
+
+    <label>
+        Tipo de producto
         <select name="type_id" required>
-            <option value="">Seleccione un tipo</option>
-            <?php
-            $pdo = getPdo();
-            $types = $pdo->query('SELECT id, name FROM product_types ORDER BY name')->fetchAll(PDO::FETCH_ASSOC);
-            foreach ($types as $type): ?>
-                <option value="<?= $type['id'] ?>" <?= (isset($product['type_id']) && $product['type_id'] == $type['id']) ? 'selected' : '' ?>>
+            <option value="">-- Seleccionar tipo --</option>
+            <?php 
+            $selectedTypeId = $isEdit ? $product['type_id'] : ($oldInput['type_id'] ?? '');
+            foreach ($types as $type): 
+            ?>
+                <option value="<?= $type['id'] ?>" 
+                    <?= ($selectedTypeId == $type['id']) ? 'selected' : '' ?>>
                     <?= htmlspecialchars($type['name']) ?>
                 </option>
             <?php endforeach; ?>
         </select>
     </label>
 
-    <button type="submit">
-        <?= $action === 'store' ? 'Crear' : 'Actualizar' ?>
-    </button>
+    <label>
+        Descripción
+        <textarea name="description" rows="4"><?= htmlspecialchars($isEdit ? $product['description'] : ($oldInput['description'] ?? '')) ?></textarea>
+    </label>
 
-    <a href="index.php?c=product&a=index" class="button button-secondary">Volver</a>
+    <button type="submit"><?= $buttonText ?></button>
+    <a href="index.php?c=product&a=index" class="button button-secondary">Cancelar</a>
 </form>
 
 <?php require __DIR__ . '/../layout/footer.php'; ?>

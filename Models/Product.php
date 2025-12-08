@@ -1,82 +1,75 @@
 <?php
+// filepath: c:\xampp\htdocs\ProyectoTienda\models\Product.php
 declare(strict_types=1);
 
 class Product
 {
-    public int $id;
-    public string $name;
-    public string $description;
-    public string $version;
-    public float $price;
-    public int $type_id;
-    public string $created_at;
+    private PDO $pdo;
 
-    /**
-     * Obtiene todos los productos.
-     */
-    public static function all(PDO $pdo): array
+    public function __construct(PDO $pdo)
     {
-        $stmt = $pdo->query('SELECT * FROM products ORDER BY id DESC');
+        $this->pdo = $pdo;
+    }
+
+    public function getAll(): array
+    {
+        $stmt = $this->pdo->query('SELECT * FROM products ORDER BY id DESC');
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
-    /**
-     * Busca un producto por ID.
-     */
-    public static function find(PDO $pdo, int $id): ?array
+    public function getById(int $id): ?array
     {
-        $stmt = $pdo->prepare('SELECT * FROM products WHERE id = :id');
+        $stmt = $this->pdo->prepare('SELECT * FROM products WHERE id = :id');
         $stmt->execute([':id' => $id]);
-        $row = $stmt->fetch(PDO::FETCH_ASSOC);
-
-        return $row ?: null;
+        $result = $stmt->fetch(PDO::FETCH_ASSOC);
+        return $result ?: null;
     }
 
-    /**
-     * Crea un nuevo producto.
-     */
-    public static function create(PDO $pdo, string $name, string $description, string $version, float $price, int $type_id): void
+    public function create(string $name, string $description, string $version, float $price, int $stock, int $typeId): bool
     {
-        $stmt = $pdo->prepare('
-            INSERT INTO products (name, description, version, price, type_id, created_at)
-            VALUES (:name, :description, :version, :price, :type_id, :created_at)
+        $stmt = $this->pdo->prepare('
+            INSERT INTO products (name, description, version, price, stock, type_id, created_at)
+            VALUES (:name, :description, :version, :price, :stock, :type_id, :created_at)
         ');
-        $stmt->execute([
+        
+        return $stmt->execute([
             ':name' => $name,
             ':description' => $description,
             ':version' => $version,
             ':price' => $price,
-            ':type_id' => $type_id,
-            ':created_at' => date('Y-m-d H:i:s'),
+            ':stock' => $stock,
+            ':type_id' => $typeId,
+            ':created_at' => date('Y-m-d H:i:s')
         ]);
     }
 
-    /**
-     * Actualiza un producto existente.
-     */
-    public static function update(PDO $pdo, int $id, string $name, string $description, string $version, float $price, int $type_id): void
+    public function update(int $id, string $name, string $description, string $version, float $price, int $stock, int $typeId): bool
     {
-        $stmt = $pdo->prepare('
-            UPDATE products
-            SET name = :name, description = :description, version = :version, price = :price, type_id = :type_id
+        $stmt = $this->pdo->prepare('
+            UPDATE products 
+            SET name = :name, 
+                description = :description, 
+                version = :version, 
+                price = :price,
+                stock = :stock,
+                type_id = :type_id
             WHERE id = :id
         ');
-        $stmt->execute([
+        
+        return $stmt->execute([
+            ':id' => $id,
             ':name' => $name,
             ':description' => $description,
             ':version' => $version,
             ':price' => $price,
-            ':type_id' => $type_id,
-            ':id' => $id,
+            ':stock' => $stock,
+            ':type_id' => $typeId
         ]);
     }
 
-    /**
-     * Elimina un producto.
-     */
-    public static function delete(PDO $pdo, int $id): void
+    public function delete(int $id): bool
     {
-        $stmt = $pdo->prepare('DELETE FROM products WHERE id = :id');
-        $stmt->execute([':id' => $id]);
+        $stmt = $this->pdo->prepare('DELETE FROM products WHERE id = :id');
+        return $stmt->execute([':id' => $id]);
     }
 }
